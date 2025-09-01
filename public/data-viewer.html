@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>診所資料查看器</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { text-align: center; color: #2c3e50; }
+        .stats { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .table-container { margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #ddd; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>🏥 診所資料庫查看器</h1>
+    
+    <div class="stats">
+        <h2>📊 資料統計</h2>
+        <p>• 病患記錄: <strong id="patientCount">載入中...</strong> 筆</p>
+        <p>• 就診記錄: <strong id="visitCount">載入中...</strong> 筆</p>
+        <p>• 診斷記錄: <strong id="diagnosisCount">載入中...</strong> 筆</p>
+        <p>• 處方記錄: <strong id="prescriptionCount">載入中...</strong> 筆</p>
+        <button onclick="loadStats()">更新統計資料</button>
+    </div>
+
+    <div class="table-container">
+        <h2>👥 病患資料 (前10筆)</h2>
+        <button onclick="loadPatients()">載入病患資料</button>
+        <div id="patientsTable"></div>
+    </div>
+
+    <div class="table-container">
+        <h2>📅 就診記錄 (前10筆)</h2>
+        <button onclick="loadVisits()">載入就診記錄</button>
+        <div id="visitsTable"></div>
+    </div>
+
+    <div class="table-container">
+        <h2>🏥 診斷記錄 (前10筆)</h2>
+        <button onclick="loadDiagnoses()">載入診斷記錄</button>
+        <div id="diagnosesTable"></div>
+    </div>
+
+    <div class="table-container">
+        <h2>💊 處方記錄 (前10筆)</h2>
+        <button onclick="loadPrescriptions()">載入處方記錄</button>
+        <div id="prescriptionsTable"></div>
+    </div>
+
+    <script>
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                document.getElementById('patientCount').textContent = data.patientCount;
+                document.getElementById('visitCount').textContent = data.visitCount;
+                document.getElementById('diagnosisCount').textContent = data.diagnosisCount;
+                document.getElementById('prescriptionCount').textContent = data.prescriptionCount;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadPatients() {
+            try {
+                const response = await fetch('/api/patients');
+                const data = await response.json();
+                displayTable('patientsTable', data, ['patient_id', 'id_card_number', 'name', 'birth_date', 'gender']);
+            } catch (error) {
+                document.getElementById('patientsTable').innerHTML = '<p style="color: red;">無法載入資料</p>';
+            }
+        }
+
+        async function loadVisits() {
+            try {
+                const response = await fetch('/api/visits');
+                const data = await response.json();
+                displayTable('visitsTable', data, ['visit_id', 'patient_id', 'visit_date']);
+            } catch (error) {
+                document.getElementById('visitsTable').innerHTML = '<p style="color: red;">無法載入資料</p>';
+            }
+        }
+
+        async function loadDiagnoses() {
+            try {
+                const response = await fetch('/api/diagnoses');
+                const data = await response.json();
+                displayTable('diagnosesTable', data, ['diagnosis_id', 'visit_id', 'icd10_code', 'diagnosis_description']);
+            } catch (error) {
+                document.getElementById('diagnosesTable').innerHTML = '<p style="color: red;">無法載入資料</p>';
+            }
+        }
+
+        async function loadPrescriptions() {
+            try {
+                const response = await fetch('/api/prescriptions');
+                const data = await response.json();
+                displayTable('prescriptionsTable', data, ['prescription_id', 'visit_id', 'medication_name', 'dosage', 'frequency', 'days', 'total_quantity']);
+            } catch (error) {
+                document.getElementById('prescriptionsTable').innerHTML = '<p style="color: red;">無法載入資料</p>';
+            }
+        }
+
+        function displayTable(containerId, data, columns) {
+            if (!data || data.length === 0) {
+                document.getElementById(containerId).innerHTML = '<p>沒有資料</p>';
+                return;
+            }
+
+            let html = '<table><tr>';
+            columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr>';
+
+            data.slice(0, 10).forEach(row => {
+                html += '<tr>';
+                columns.forEach(col => {
+                    html += `<td>${row[col] || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</table>';
+            
+            document.getElementById(containerId).innerHTML = html;
+        }
+
+        // Load stats automatically when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+        });
+    </script>
+</body>
+</html>

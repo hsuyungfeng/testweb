@@ -1,0 +1,91 @@
+{
+  "name": "台灣健保申報固定寬度格式",
+  "description": "標準的健保申報固定寬度檔案格式定義",
+  "encoding": "big5",
+  "fields": [
+    {
+      "name": "id_card_number",
+      "start": 0,
+      "length": 10,
+      "type": "string",
+      "description": "身分證號碼"
+    },
+    {
+      "name": "name", 
+      "start": 10,
+      "length": 20,
+      "type": "string",
+      "description": "病患姓名"
+    },
+    {
+      "name": "birth_date",
+      "start": 30,
+      "length": 7,
+      "type": "date",
+      "description": "出生日期（民國年YYYMMDD）"
+    },
+    {
+      "name": "gender",
+      "start": 37,
+      "length": 1,
+      "type": "string", 
+      "description": "性別（1:男, 2:女）"
+    },
+    {
+      "name": "visit_date",
+      "start": 38,
+      "length": 7,
+      "type": "date",
+      "description": "就診日期（民國年YYYMMDD）"
+    },
+    {
+      "name": "diagnosis_code_1",
+      "start": 45,
+      "length": 10,
+      "type": "string",
+      "description": "主要診斷碼"
+    },
+    {
+      "name": "diagnosis_code_2",
+      "start": 55,
+      "length": 10,
+      "type": "string",
+      "description": "次要診斷碼"
+    },
+    {
+      "name": "medication_code",
+      "start": 65,
+      "length": 10,
+      "type": "string",
+      "description": "藥品代碼"
+    },
+    {
+      "name": "medication_name",
+      "start": 75,
+      "length": 30,
+      "type": "string",
+      "description": "藥品名稱"
+    },
+    {
+      "name": "dosage",
+      "start": 105,
+      "length": 10,
+      "type": "number",
+      "description": "劑量"
+    },
+    {
+      "name": "frequency",
+      "start": 115,
+      "length": 5,
+      "type": "string",
+      "description": "用藥頻率"
+    },
+    {
+      "name": "days",
+      "start": 120,
+      "length": 3,
+      "type": "number",
+      "description": "用藥天數"
+    }
+  ]
+}

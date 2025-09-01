@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健保申报资料合并工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 40px auto; padding: 20px; }
+        h1 { text-align: center; }
+        
+        /* Tab styling */
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #007bff; }
+        .tab { padding: 10px 20px; background: #f8f9fa; border: 1px solid #ddd; border-bottom: none; cursor: pointer; margin-right: 5px; border-radius: 5px 5px 0 0; }
+        .tab.active { background: #007bff; color: white; border-color: #007bff; }
+        .tab-content { display: none; padding: 20px; border: 1px solid #ddd; border-top: none; }
+        .tab-content.active { display: block; }
+        
+        /* Form styling */
+        form { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        input[type="file"] { border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        
+        /* Status and stats styling */
+        #status { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background-color: #f8f9fa; 
+            border-radius: 8px; 
+            border-left: 4px solid #007bff;
+            text-align: left; 
+            line-height: 1.6;
+        }
+        #status strong { color: #2c3e50; }
+        #status.success { border-left-color: #28a745; background-color: #d4edda; }
+        #status.error { border-left-color: #dc3545; background-color: #f8d7da; }
+        
+        /* Data viewer styling */
+        .stats { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .table-container { margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #ddd; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>🏥 诊所数据管理系统</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('upload')">文件上传与合并</div>
+        <div class="tab" onclick="switchTab('multiFormat')">多格式处理</div>
+        <div class="tab" onclick="switchTab('viewer')">数据查看器</div>
+    </div>
+    
+    <div id="uploadTab" class="tab-content active">
+        <form id="uploadForm">
+            <label for="zipFiles">请选择要上传的 ZIP 档案 (可多选):</label>
+            <input type="file" id="zipFiles" name="zipFiles" multiple accept=".zip">
+            <button type="submit">开始合并与下载</button>
+        </form>
+        <div id="status">请选择档案...</div>
+    </div>
+    
+    <div id="multiFormatTab" class="tab-content">
+        <h2>📁 多格式檔案處理</h2>
+        <p>支援台灣常見HIS系統格式：DBF、Access、CSV、固定寬度TXT、XML</p>
+        
+        <form id="multiFormatForm">
+            <label for="multiFiles">請選擇要處理的檔案 (可多選):</label>
+            <input type="file" id="multiFiles" name="multiFiles" multiple accept=".dbf,.mdb,.accdb,.csv,.txt,.xml">
+            <button type="submit">開始處理與導入</button>
+        </form>
+        
+        <div id="multiFormatStatus" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+            請選擇檔案...
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background-color: #e8f5e8; border-radius: 8px;">
+            <h3>📋 支援格式說明</h3>
+            <ul>
+                <li><strong>DBF</strong> - 展望、醫聖、耀聖系統</li>
+                <li><strong>Access</strong> - MDB/ACCDB 資料庫文件</li>
+                <li><strong>CSV</strong> - 報表匯出格式</li>
+                <li><strong>固定寬度TXT</strong> - 早期健保申報格式</li>
+                <li><strong>XML</strong> - 健康保險交換格式</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="viewerTab" class="tab-content">
+        <div class="stats">
+            <h2>📊 资料统计</h2>
+            <p>• 病患记录: <strong id="patientCount">载入中...</strong> 笔</p>
+            <p>• 就诊记录: <strong id="visitCount">载入中...</strong> 笔</p>
+            <p>• 诊断记录: <strong id="diagnosisCount">载入中...</strong> 笔</p>
+            <p>• 处方记录: <strong id="prescriptionCount">载入中...</strong> 笔</p>
+            <button onclick="loadStats()">更新统计资料</button>
+        </div>
+
+        <div class="table-container">
+            <h2>👥 病患资料 (前10笔)</h2>
+            <button onclick="loadPatients()">载入病患资料</button>
+            <div id="patientsTable"></div>
+        </div>
+
+        <div class="table-container">
+            <h2>📅 就诊记录 (前10笔)</h2>
+            <button onclick="loadVisits()">载入就诊记录</button>
+            <div id="visitsTable"></div>
+        </div>
+
+        <div class="table-container">
+            <h2>🏥 诊断记录 (前10笔)</h2>
+            <button onclick="loadDiagnoses()">载入诊断记录</button>
+            <div id="diagnosesTable"></div>
+        </div>
+
+        <div class="table-container">
+            <h2>💊 处方记录 (前10笔)</h2>
+            <button onclick="loadPrescriptions()">载入处方记录</button>
+            <div id="prescriptionsTable"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Auto-load stats when switching to viewer tab
+            if (tabName === 'viewer') {
+                loadStats();
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                document.getElementById('patientCount').textContent = data.patientCount;
+                document.getElementById('visitCount').textContent = data.visitCount;
+                document.getElementById('diagnosisCount').textContent = data.diagnosisCount;
+                document.getElementById('prescriptionCount').textContent = data.prescriptionCount;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadPatients() {
+            try {
+                const response = await fetch('/api/patients');
+                const data = await response.json();
+                displayTable('patientsTable', data, ['patient_id', 'id_card_number', 'name', 'birth_date', 'gender']);
+            } catch (error) {
+                document.getElementById('patientsTable').innerHTML = '<p style="color: red;">无法载入资料</p>';
+            }
+        }
+
+        async function loadVisits() {
+            try {
+                const response = await fetch('/api/visits');
+                const data = await response.json();
+                displayTable('visitsTable', data, ['visit_id', 'patient_id', 'visit_date']);
+            } catch (error) {
+                document.getElementById('visitsTable').innerHTML = '<p style="color: red;">无法载入资料</p>';
+            }
+        }
+
+        async function loadDiagnoses() {
+            try {
+                const response = await fetch('/api/diagnoses');
+                const data = await response.json();
+                displayTable('diagnosesTable', data, ['diagnosis_id', 'visit_id', 'icd10_code', 'diagnosis_description']);
+            } catch (error) {
+                document.getElementById('diagnosesTable').innerHTML = '<p style="color: red;">无法载入资料</p>';
+            }
+        }
+
+        async function loadPrescriptions() {
+            try {
+                const response = await fetch('/api/prescriptions');
+                const data = await response.json();
+                displayTable('prescriptionsTable', data, ['prescription_id', 'visit_id', 'medication_name', 'dosage', 'frequency', 'days', 'total_quantity']);
+            } catch (error) {
+                document.getElementById('prescriptionsTable').innerHTML = '<p style="color: red;">无法载入资料</p>';
+            }
+        }
+
+        function displayTable(containerId, data, columns) {
+            if (!data || data.length === 0) {
+                document.getElementById(containerId).innerHTML = '<p>没有资料</p>';
+                return;
+            }
+
+            let html = '<table><tr>';
+            columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr>';
+
+            data.slice(0, 10).forEach(row => {
+                html += '<tr>';
+                columns.forEach(col => {
+                    html += `<td>${row[col] || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</table>';
+            
+            document.getElementById(containerId).innerHTML = html;
+        }
+    </script>
+</body>
+</html>
